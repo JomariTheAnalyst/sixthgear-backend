@@ -63,7 +63,8 @@ export default async function seedDemoData({ container }: ExecArgs) {
   const salesChannelModuleService = container.resolve(Modules.SALES_CHANNEL);
   const storeModuleService = container.resolve(Modules.STORE);
 
-  const countries = ["gb", "de", "dk", "se", "fr", "es", "it"];
+  // PH-only: Single country
+  const countries = ["ph"];
 
   logger.info("Seeding store data...");
   const [store] = await storeModuleService.listStores();
@@ -72,7 +73,6 @@ export default async function seedDemoData({ container }: ExecArgs) {
   });
 
   if (!defaultSalesChannel.length) {
-    // create the default sales channel
     const { result: salesChannelResult } = await createSalesChannelsWorkflow(
       container
     ).run({
@@ -87,16 +87,14 @@ export default async function seedDemoData({ container }: ExecArgs) {
     defaultSalesChannel = salesChannelResult;
   }
 
+  // PH-only: PHP as the only supported currency
   await updateStoreCurrencies(container).run({
     input: {
       store_id: store.id,
       supported_currencies: [
         {
-          currency_code: "eur",
+          currency_code: "php",
           is_default: true,
-        },
-        {
-          currency_code: "usd",
         },
       ],
     },
@@ -110,13 +108,15 @@ export default async function seedDemoData({ container }: ExecArgs) {
       },
     },
   });
+
+  // PH-only: Philippines region with PHP currency
   logger.info("Seeding region data...");
   const { result: regionResult } = await createRegionsWorkflow(container).run({
     input: {
       regions: [
         {
-          name: "Europe",
-          currency_code: "eur",
+          name: "Philippines",
+          currency_code: "php",
           countries,
           payment_providers: ["pp_system_default"],
         },
@@ -126,6 +126,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
   const region = regionResult[0];
   logger.info("Finished seeding regions.");
 
+  // PH-only: Tax region for Philippines
   logger.info("Seeding tax regions...");
   await createTaxRegionsWorkflow(container).run({
     input: countries.map((country_code) => ({
@@ -135,6 +136,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
   });
   logger.info("Finished seeding tax regions.");
 
+  // PH-only: Philippines Warehouse in Manila
   logger.info("Seeding stock location data...");
   const { result: stockLocationResult } = await createStockLocationsWorkflow(
     container
@@ -142,11 +144,11 @@ export default async function seedDemoData({ container }: ExecArgs) {
     input: {
       locations: [
         {
-          name: "European Warehouse",
+          name: "Philippines Warehouse",
           address: {
-            city: "Copenhagen",
-            country_code: "DK",
-            address_1: "",
+            city: "Manila",
+            country_code: "PH",
+            address_1: "Metro Manila",
           },
         },
       ],
@@ -193,39 +195,16 @@ export default async function seedDemoData({ container }: ExecArgs) {
     shippingProfile = shippingProfileResult[0];
   }
 
+  // PH-only: Fulfillment set for Philippines delivery
   const fulfillmentSet = await fulfillmentModuleService.createFulfillmentSets({
-    name: "European Warehouse delivery",
+    name: "Philippines Warehouse delivery",
     type: "shipping",
     service_zones: [
       {
-        name: "Europe",
+        name: "Philippines",
         geo_zones: [
           {
-            country_code: "gb",
-            type: "country",
-          },
-          {
-            country_code: "de",
-            type: "country",
-          },
-          {
-            country_code: "dk",
-            type: "country",
-          },
-          {
-            country_code: "se",
-            type: "country",
-          },
-          {
-            country_code: "fr",
-            type: "country",
-          },
-          {
-            country_code: "es",
-            type: "country",
-          },
-          {
-            country_code: "it",
+            country_code: "ph",
             type: "country",
           },
         ],
@@ -242,6 +221,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
     },
   });
 
+  // PH-only: Shipping options with PHP prices (amounts in centavos)
   await createShippingOptionsWorkflow(container).run({
     input: [
       {
@@ -252,21 +232,17 @@ export default async function seedDemoData({ container }: ExecArgs) {
         shipping_profile_id: shippingProfile.id,
         type: {
           label: "Standard",
-          description: "Ship in 2-3 days.",
+          description: "Ship in 3-5 business days.",
           code: "standard",
         },
         prices: [
           {
-            currency_code: "usd",
-            amount: 10,
-          },
-          {
-            currency_code: "eur",
-            amount: 10,
+            currency_code: "php",
+            amount: 15000, // ₱150.00
           },
           {
             region_id: region.id,
-            amount: 10,
+            amount: 15000,
           },
         ],
         rules: [
@@ -290,21 +266,17 @@ export default async function seedDemoData({ container }: ExecArgs) {
         shipping_profile_id: shippingProfile.id,
         type: {
           label: "Express",
-          description: "Ship in 24 hours.",
+          description: "Ship in 1-2 business days.",
           code: "express",
         },
         prices: [
           {
-            currency_code: "usd",
-            amount: 10,
-          },
-          {
-            currency_code: "eur",
-            amount: 10,
+            currency_code: "php",
+            amount: 30000, // ₱300.00
           },
           {
             region_id: region.id,
-            amount: 10,
+            amount: 30000,
           },
         ],
         rules: [
@@ -397,6 +369,7 @@ export default async function seedDemoData({ container }: ExecArgs) {
     },
   });
 
+  // PH-only: All product prices in PHP (amounts in centavos)
   await createProductsWorkflow(container).run({
     input: {
       products: [
@@ -439,153 +412,53 @@ export default async function seedDemoData({ container }: ExecArgs) {
             {
               title: "S / Black",
               sku: "SHIRT-S-BLACK",
-              options: {
-                Size: "S",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "S", Color: "Black" },
+              prices: [{ amount: 99900, currency_code: "php" }], // ₱999.00
             },
             {
               title: "S / White",
               sku: "SHIRT-S-WHITE",
-              options: {
-                Size: "S",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "S", Color: "White" },
+              prices: [{ amount: 99900, currency_code: "php" }],
             },
             {
               title: "M / Black",
               sku: "SHIRT-M-BLACK",
-              options: {
-                Size: "M",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "M", Color: "Black" },
+              prices: [{ amount: 99900, currency_code: "php" }],
             },
             {
               title: "M / White",
               sku: "SHIRT-M-WHITE",
-              options: {
-                Size: "M",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "M", Color: "White" },
+              prices: [{ amount: 99900, currency_code: "php" }],
             },
             {
               title: "L / Black",
               sku: "SHIRT-L-BLACK",
-              options: {
-                Size: "L",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "L", Color: "Black" },
+              prices: [{ amount: 99900, currency_code: "php" }],
             },
             {
               title: "L / White",
               sku: "SHIRT-L-WHITE",
-              options: {
-                Size: "L",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "L", Color: "White" },
+              prices: [{ amount: 99900, currency_code: "php" }],
             },
             {
               title: "XL / Black",
               sku: "SHIRT-XL-BLACK",
-              options: {
-                Size: "XL",
-                Color: "Black",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "XL", Color: "Black" },
+              prices: [{ amount: 99900, currency_code: "php" }],
             },
             {
               title: "XL / White",
               sku: "SHIRT-XL-WHITE",
-              options: {
-                Size: "XL",
-                Color: "White",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "XL", Color: "White" },
+              prices: [{ amount: 99900, currency_code: "php" }],
             },
           ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel[0].id,
-            },
-          ],
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
         },
         {
           title: "Medusa Sweatshirt",
@@ -606,87 +479,34 @@ export default async function seedDemoData({ container }: ExecArgs) {
               url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-back.png",
             },
           ],
-          options: [
-            {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
-          ],
+          options: [{ title: "Size", values: ["S", "M", "L", "XL"] }],
           variants: [
             {
               title: "S",
               sku: "SWEATSHIRT-S",
-              options: {
-                Size: "S",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "S" },
+              prices: [{ amount: 149900, currency_code: "php" }], // ₱1,499.00
             },
             {
               title: "M",
               sku: "SWEATSHIRT-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "M" },
+              prices: [{ amount: 149900, currency_code: "php" }],
             },
             {
               title: "L",
               sku: "SWEATSHIRT-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "L" },
+              prices: [{ amount: 149900, currency_code: "php" }],
             },
             {
               title: "XL",
               sku: "SWEATSHIRT-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "XL" },
+              prices: [{ amount: 149900, currency_code: "php" }],
             },
           ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel[0].id,
-            },
-          ],
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
         },
         {
           title: "Medusa Sweatpants",
@@ -707,87 +527,34 @@ export default async function seedDemoData({ container }: ExecArgs) {
               url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatpants-gray-back.png",
             },
           ],
-          options: [
-            {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
-          ],
+          options: [{ title: "Size", values: ["S", "M", "L", "XL"] }],
           variants: [
             {
               title: "S",
               sku: "SWEATPANTS-S",
-              options: {
-                Size: "S",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "S" },
+              prices: [{ amount: 129900, currency_code: "php" }], // ₱1,299.00
             },
             {
               title: "M",
               sku: "SWEATPANTS-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "M" },
+              prices: [{ amount: 129900, currency_code: "php" }],
             },
             {
               title: "L",
               sku: "SWEATPANTS-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "L" },
+              prices: [{ amount: 129900, currency_code: "php" }],
             },
             {
               title: "XL",
               sku: "SWEATPANTS-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "XL" },
+              prices: [{ amount: 129900, currency_code: "php" }],
             },
           ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel[0].id,
-            },
-          ],
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
         },
         {
           title: "Medusa Shorts",
@@ -808,87 +575,34 @@ export default async function seedDemoData({ container }: ExecArgs) {
               url: "https://medusa-public-images.s3.eu-west-1.amazonaws.com/shorts-vintage-back.png",
             },
           ],
-          options: [
-            {
-              title: "Size",
-              values: ["S", "M", "L", "XL"],
-            },
-          ],
+          options: [{ title: "Size", values: ["S", "M", "L", "XL"] }],
           variants: [
             {
               title: "S",
               sku: "SHORTS-S",
-              options: {
-                Size: "S",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "S" },
+              prices: [{ amount: 79900, currency_code: "php" }], // ₱799.00
             },
             {
               title: "M",
               sku: "SHORTS-M",
-              options: {
-                Size: "M",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "M" },
+              prices: [{ amount: 79900, currency_code: "php" }],
             },
             {
               title: "L",
               sku: "SHORTS-L",
-              options: {
-                Size: "L",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "L" },
+              prices: [{ amount: 79900, currency_code: "php" }],
             },
             {
               title: "XL",
               sku: "SHORTS-XL",
-              options: {
-                Size: "XL",
-              },
-              prices: [
-                {
-                  amount: 10,
-                  currency_code: "eur",
-                },
-                {
-                  amount: 15,
-                  currency_code: "usd",
-                },
-              ],
+              options: { Size: "XL" },
+              prices: [{ amount: 79900, currency_code: "php" }],
             },
           ],
-          sales_channels: [
-            {
-              id: defaultSalesChannel[0].id,
-            },
-          ],
+          sales_channels: [{ id: defaultSalesChannel[0].id }],
         },
       ],
     },
