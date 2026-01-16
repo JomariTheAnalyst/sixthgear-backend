@@ -1,10 +1,11 @@
-import { loadEnv, defineConfig, Modules } from "@medusajs/framework/utils";
+import { loadEnv, defineConfig } from "@medusajs/framework/utils";
 
 loadEnv(process.env.NODE_ENV || "development", process.cwd());
 
 module.exports = defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
+    redisUrl: process.env.REDIS_URL,
     http: {
       storeCors: process.env.STORE_CORS!,
       adminCors: process.env.ADMIN_CORS!,
@@ -14,6 +15,25 @@ module.exports = defineConfig({
     },
   },
   modules: [
+    // Marketing Module - admin-managed strips, banners, popups
+    {
+      resolve: "./src/modules/marketing",
+    },
+    // Redis Event Bus - for async event handling (requires Redis to be running)
+    // {
+    //   resolve: "@medusajs/medusa/event-bus-redis",
+    //   options: {
+    //     redisUrl: process.env.REDIS_URL,
+    //   },
+    // },
+    // Redis Cache - for faster API responses (requires Redis to be running)
+    // {
+    //   resolve: "@medusajs/medusa/cache-redis",
+    //   options: {
+    //     redisUrl: process.env.REDIS_URL,
+    //     ttl: 30, // Cache TTL in seconds
+    //   },
+    // },
     // Cloudflare R2 File Provider (S3-compatible)
     {
       resolve: "@medusajs/medusa/file",
