@@ -16,7 +16,7 @@ const MarketingItem = model.define("marketing_item", {
   priority: model.number().default(0),
   start_at: model.dateTime().nullable(),
   end_at: model.dateTime().nullable(),
-  pages: model.json().default([]),
+  pages: model.json().default({} as Record<string, unknown>),
   device: model.enum(["all", "mobile", "desktop"]).default("all"),
   // Banner specific
   placement: model.text().nullable(),

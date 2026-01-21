@@ -89,17 +89,15 @@
 - Each item should have:
   - Name
   - Description
-  - Price (PHP)
   - Image (optional)
   - Size options (if applicable)
-  - Customization options (sugar level, milk type, etc.)
 - Beautiful, modern design matching brand
 - Mobile-friendly menu layout
 - Add link to menu in navigation
 
 **Acceptance Criteria:**
 - [ ] Menu page created and accessible
-- [ ] All coffee drinks listed with prices
+- [ ] All coffee drinks listed 
 - [ ] Non-coffee options included
 - [ ] Responsive design
 - [ ] Images for popular items

@@ -138,8 +138,6 @@ Your Sixthgear project is **70% complete** with a solid foundation but needs cri
 - Shipping Information
 - Returns/Warranty Policy
 - Track Order page
-- Blog/News section
-- Franchise application page
 
 **Impact:** Legal compliance issues, poor SEO, customer confusion
 

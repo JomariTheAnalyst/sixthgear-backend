@@ -33,7 +33,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     const token = crypto.randomBytes(32).toString("hex");
 
     // Determine redirect path
-    const pages = item.pages as string[];
+    const pages = Array.isArray(item.pages) ? (item.pages as string[]) : [];
     const defaultPath =
       pages && pages.length > 0 ? pages[0].replace("/*", "") : "/";
     const redirectPath = redirect_path || defaultPath || "/";
@@ -48,7 +48,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
 
     // Build preview URL
     const previewUrl = `${STOREFRONT_URL}/api/preview?token=${token}&redirect=${encodeURIComponent(
-      redirectPath
+      redirectPath,
     )}`;
 
     return res.json({
