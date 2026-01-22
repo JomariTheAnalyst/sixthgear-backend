@@ -33,7 +33,12 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@medusajs/admin-shared": "2.12.4",
+    "@medusajs/dashboard": "2.12.4",
+    "@medusajs/draft-order": "2.12.4",
+    "@medusajs/icons": "2.12.4",
     "@medusajs/test-utils": "2.12.4",
+    "@medusajs/ui": "^4.0.2",
     "@swc/core": "^1.7.28",
     "@swc/jest": "^0.2.36",
     "@types/jest": "^29.5.13",

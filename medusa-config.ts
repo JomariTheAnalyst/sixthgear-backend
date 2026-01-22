@@ -15,10 +15,6 @@ module.exports = defineConfig({
     },
   },
   modules: [
-    // Marketing Module - admin-managed strips, banners, popups
-    {
-      resolve: "./src/modules/marketing",
-    },
     // Redis Event Bus - for async event handling (requires Redis to be running)
     // {
     //   resolve: "@medusajs/medusa/event-bus-redis",

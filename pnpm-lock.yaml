@@ -30,9 +30,24 @@ importers:
         specifier: ^9.0.1
         version: 9.0.1
     devDependencies:
+      '@medusajs/admin-shared':
+        specifier: 2.12.4
+        version: 2.12.4
+      '@medusajs/dashboard':
+        specifier: 2.12.4
+        version: 2.12.4(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(typescript@5.9.3)
+      '@medusajs/draft-order':
+        specifier: 2.12.4
+        version: 2.12.4(@medusajs/admin-sdk@2.12.4)(@medusajs/cli@2.12.4(@types/node@20.19.30))(@medusajs/framework@2.12.4(@medusajs/cli@2.12.4(@types/node@20.19.30))(@types/node@20.19.30)(ioredis@5.9.2)(vite@5.4.21(@types/node@20.19.30)))(@medusajs/icons@2.12.4(react@18.3.1))(@medusajs/test-utils@2.12.4)(@medusajs/ui@4.0.32(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.20.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)
+      '@medusajs/icons':
+        specifier: 2.12.4
+        version: 2.12.4(react@18.3.1)
       '@medusajs/test-utils':
         specifier: 2.12.4
         version: 2.12.4(@medusajs/core-flows@2.12.4(@medusajs/framework@2.12.4(@medusajs/cli@2.12.4(@types/node@20.19.30))(@types/node@20.19.30)(ioredis@5.9.2)(vite@5.4.21(@types/node@20.19.30))))(@medusajs/framework@2.12.4(@medusajs/cli@2.12.4(@types/node@20.19.30))(@types/node@20.19.30)(ioredis@5.9.2)(vite@5.4.21(@types/node@20.19.30)))(@medusajs/medusa@2.12.4)
+      '@medusajs/ui':
+        specifier: ^4.0.2
+        version: 4.0.32(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
       '@swc/core':
         specifier: ^1.7.28
         version: 1.15.10(@swc/helpers@0.5.18)

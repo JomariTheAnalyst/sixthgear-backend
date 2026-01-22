@@ -244,7 +244,7 @@ Your Sixthgear project is **70% complete** with a solid foundation but needs cri
 - [ ] Implement Stripe payment integration
 - [ ] Add GCash/Maya via Paymongo or Xendit
 - [ ] Set up payment webhooks
-- [ ] Configure email provider (SendGrid/Resend)
+- [ ] Configure email provider (AWS SES)
 - [ ] Create order confirmation email template
 - [ ] Implement password reset emails
 
