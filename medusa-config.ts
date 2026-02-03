@@ -15,6 +15,14 @@ module.exports = defineConfig({
     },
   },
   modules: [
+    // Contact Inquiry Module - Custom module for handling contact form submissions
+    {
+      resolve: "./src/modules/contact-inquiry",
+    },
+    // Wishlist Module - Custom module for customer wishlists
+    {
+      resolve: "./src/modules/wishlist",
+    },
     // Redis Event Bus - for async event handling (requires Redis to be running)
     // {
     //   resolve: "@medusajs/medusa/event-bus-redis",
