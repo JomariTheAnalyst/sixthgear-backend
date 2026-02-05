@@ -13,6 +13,17 @@ module.exports = defineConfig({
       jwtSecret: process.env.JWT_SECRET || "supersecret",
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
     },
+    databaseDriverOptions: {
+      connection: {
+        ssl: false,
+      },
+      pool: {
+        min: 2,
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
+      },
+    },
   },
   modules: [
     // Contact Inquiry Module - Custom module for handling contact form submissions
@@ -38,6 +49,22 @@ module.exports = defineConfig({
     //     ttl: 30, // Cache TTL in seconds
     //   },
     // },
+    // Stripe Payment Provider
+    {
+      resolve: "@medusajs/payment",
+      options: {
+        providers: [
+          {
+            resolve: "@medusajs/payment-stripe",
+            id: "stripe",
+            options: {
+              apiKey: process.env.STRIPE_API_KEY,
+              webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+            },
+          },
+        ],
+      },
+    },
     // Cloudflare R2 File Provider (S3-compatible)
     {
       resolve: "@medusajs/medusa/file",

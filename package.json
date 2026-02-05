@@ -30,6 +30,9 @@
     "@medusajs/cli": "2.12.4",
     "@medusajs/framework": "2.12.4",
     "@medusajs/medusa": "2.12.4",
+    "@medusajs/payment-stripe": "^2.12.4",
+    "@rokmohar/medusa-payment-manual": "^1.0.3",
+    "stripe": "^17.5.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

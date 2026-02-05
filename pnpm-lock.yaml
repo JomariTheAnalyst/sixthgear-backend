@@ -26,15 +26,18 @@ importers:
       '@medusajs/medusa':
         specifier: 2.12.4
         version: 2.12.4(@medusajs/admin-sdk@2.12.4)(@medusajs/cli@2.12.4(@types/node@20.19.30))(@medusajs/framework@2.12.4(@medusajs/cli@2.12.4(@types/node@20.19.30))(@types/node@20.19.30)(ioredis@5.9.2)(vite@5.4.21(@types/node@20.19.30)))(@medusajs/icons@2.12.4(react@18.3.1))(@medusajs/test-utils@2.12.4)(@medusajs/ui@4.0.32(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3))(@swc/core@1.15.10(@swc/helpers@0.5.18))(@types/node@20.19.30)(@types/react-dom@18.3.7(@types/react@18.3.27))(@types/react@18.3.27)(awilix@8.0.1)(picomatch@4.0.3)(posthog-node@5.23.0)(react-dom@18.3.1(react@18.3.1))(react-router-dom@6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(typescript@5.9.3)(yalc@1.0.0-pre.53)
-      '@sixthgear/xendit-payment':
-        specifier: workspace:*
-        version: link:packages/xendit-payment
+      '@medusajs/payment-stripe':
+        specifier: ^2.12.4
+        version: 2.12.4(@medusajs/framework@2.12.4(@medusajs/cli@2.12.4(@types/node@20.19.30))(@types/node@20.19.30)(ioredis@5.9.2)(vite@5.4.21(@types/node@20.19.30)))
+      '@rokmohar/medusa-payment-manual':
+        specifier: ^1.0.3
+        version: 1.0.3(@types/node@20.19.30)(awilix@8.0.1)(express@4.22.1)
+      stripe:
+        specifier: ^17.5.0
+        version: 17.7.0
       uuid:
         specifier: ^9.0.1
         version: 9.0.1
-      xendit-node:
-        specifier: ^4.0.0
-        version: 4.3.0
     devDependencies:
       '@medusajs/admin-shared':
         specifier: 2.12.4
@@ -3103,6 +3106,12 @@ packages:
   '@remix-run/router@1.23.2':
     resolution: {integrity: sha512-Ic6m2U/rMjTkhERIa/0ZtXJP17QUi2CbWE7cqx4J58M8aA3QTfW+2UlQ4psvTX9IO1RfNVhK3pcpdjej7L+t2w==}
     engines: {node: '>=14.0.0'}
+
+  '@rokmohar/medusa-payment-manual@1.0.3':
+    resolution: {integrity: sha512-faQ8YZ6Ukvl/HLhiDdh0Ct6DvmntQeh4owf0Mhu+b3SfQQrMwjA7wt5DAHuMgmPKa8GrsxNGfLYaMbt4zqIpTQ==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      awilix: ^8.0.1
 
   '@rolldown/pluginutils@1.0.0-beta.27':
     resolution: {integrity: sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA==}
@@ -6355,6 +6364,10 @@ packages:
 
   stripe@15.12.0:
     resolution: {integrity: sha512-slTbYS1WhRJXVB8YXU8fgHizkUrM9KJyrw4Dd8pLEwzKHYyQTIE46EePC2MVbSDZdE24o1GdNtzmJV4PrPpmJA==}
+    engines: {node: '>=12.*'}
+
+  stripe@17.7.0:
+    resolution: {integrity: sha512-aT2BU9KkizY9SATf14WhhYVv2uOapBWX0OFWF4xvcj1mPaNotlSc2CsxpS4DS46ZueSppmCF5BX1sNYBtwBvfw==}
     engines: {node: '>=12.*'}
 
   stripe@19.1.0:
@@ -11237,6 +11250,25 @@ snapshots:
 
   '@remix-run/router@1.23.2': {}
 
+  '@rokmohar/medusa-payment-manual@1.0.3(@types/node@20.19.30)(awilix@8.0.1)(express@4.22.1)':
+    dependencies:
+      '@medusajs/modules-sdk': 2.12.4(@types/node@20.19.30)(express@4.22.1)
+      '@medusajs/utils': 2.12.4(@types/node@20.19.30)(express@4.22.1)
+      awilix: 8.0.1
+    transitivePeerDependencies:
+      - '@types/node'
+      - better-sqlite3
+      - encoding
+      - express
+      - libsql
+      - mariadb
+      - mysql
+      - mysql2
+      - pg-native
+      - sqlite3
+      - supports-color
+      - tedious
+
   '@rolldown/pluginutils@1.0.0-beta.27': {}
 
   '@rollup/rollup-android-arm-eabi@4.55.2':
@@ -14919,6 +14951,11 @@ snapshots:
   strip-json-comments@3.1.1: {}
 
   stripe@15.12.0:
+    dependencies:
+      '@types/node': 20.19.30
+      qs: 6.14.1
+
+  stripe@17.7.0:
     dependencies:
       '@types/node': 20.19.30
       qs: 6.14.1

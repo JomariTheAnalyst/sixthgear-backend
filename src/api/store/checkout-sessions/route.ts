@@ -1,0 +1,351 @@
+import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http";
+import { MedusaError } from "@medusajs/framework/utils";
+import Stripe from "stripe";
+
+/**
+ * Stripe Checkout Session Creation Endpoint
+ *
+ * Creates a Stripe Checkout Session (hosted payment page) for a cart
+ * Following official Stripe Checkout documentation
+ *
+ * @see https://stripe.com/docs/payments/checkout/how-checkout-works
+ * @see https://stripe.com/docs/api/checkout/sessions/create
+ */
+
+const stripe = new Stripe(process.env.STRIPE_API_KEY!, {
+  apiVersion: "2024-12-18.acacia",
+});
+
+export async function POST(
+  req: MedusaRequest,
+  res: MedusaResponse,
+): Promise<void> {
+  try {
+    const { cart_id, payment_collection_id, payment_session_id } = req.body as {
+      cart_id: string;
+      payment_collection_id?: string;
+      payment_session_id?: string;
+    };
+
+    if (!cart_id) {
+      res.status(400).json({
+        error: "cart_id is required",
+      });
+      return;
+    }
+
+    console.log("[Stripe Checkout] Creating session with:", {
+      cart_id,
+      payment_collection_id,
+      payment_session_id,
+    });
+
+    // Use Medusa SDK to fetch cart (no external HTTP call needed)
+    const query = req.scope.resolve("query");
+
+    const { data: carts } = await query.graph({
+      entity: "cart",
+      fields: [
+        "id",
+        "email",
+        "total",
+        "tax_total",
+        "region_id",
+        "region.*",
+        "region.countries.*",
+        "items.*",
+        "items.product.*",
+        "items.variant.*",
+        "items.thumbnail",
+        "items.metadata",
+        "items.unit_price",
+        "items.subtotal",
+        "items.total",
+        "items.original_total",
+        "items.quantity",
+        "items.title",
+        "shipping_address.*",
+        "shipping_methods.*",
+        "shipping_methods.amount",
+      ],
+      filters: { id: cart_id },
+    });
+
+    const cart = carts?.[0];
+
+    if (!cart) {
+      res.status(404).json({
+        error: "Cart not found",
+      });
+      return;
+    }
+
+    // Log cart data for debugging
+    console.log("[Stripe Checkout] Cart data:", {
+      id: cart.id,
+      email: cart.email,
+      total: cart.total,
+      tax_total: cart.tax_total,
+      items_count: cart.items?.length,
+      items: cart.items?.map((item: any) => ({
+        title: item.title,
+        unit_price: item.unit_price,
+        unit_price_type: typeof item.unit_price,
+        quantity: item.quantity,
+      })),
+      shipping_methods: cart.shipping_methods?.map((sm: any) => ({
+        name: sm.name,
+        amount: sm.amount,
+        amount_type: typeof sm.amount,
+      })),
+    });
+
+    // Validate cart has items
+    if (!cart.items || cart.items.length === 0) {
+      res.status(400).json({
+        error: "Cart is empty",
+      });
+      return;
+    }
+
+    // Validate cart has shipping address
+    if (!cart.shipping_address) {
+      res.status(400).json({
+        error: "Shipping address is required",
+      });
+      return;
+    }
+
+    // Validate cart has email
+    if (!cart.email) {
+      res.status(400).json({
+        error: "Email is required",
+      });
+      return;
+    }
+
+    // Helper function to safely convert Medusa amounts to Stripe integers
+    const toStripeAmount = (value: any, itemName?: string): number => {
+      console.log(
+        `[Stripe Checkout] Converting amount for ${itemName || "item"}:`,
+        {
+          value,
+          type: typeof value,
+          isObject: typeof value === "object",
+          hasToString: value && typeof value.toString === "function",
+          stringValue: value ? value.toString() : "null/undefined",
+        },
+      );
+
+      if (value === null || value === undefined) {
+        console.warn(
+          `[Stripe Checkout] ⚠️ Null/undefined value for ${itemName}`,
+        );
+        return 0;
+      }
+
+      // Handle BigNumber/Decimal objects from Medusa
+      let numValue: number;
+
+      // Check if it's a BigNumber object with numeric_ property
+      if (typeof value === "object" && value.numeric_ !== undefined) {
+        numValue = Math.round(value.numeric_ * 100); // Convert to cents
+        console.log(
+          `[Stripe Checkout] ✅ Converted BigNumber ${itemName}: ${value.numeric_} → ${numValue}`,
+        );
+        return numValue;
+      }
+
+      // Check if it has raw_ property with value
+      if (typeof value === "object" && value.raw_ && value.raw_.value) {
+        const floatValue = parseFloat(value.raw_.value);
+        numValue = Math.round(floatValue * 100); // Convert to cents
+        console.log(
+          `[Stripe Checkout] ✅ Converted raw value ${itemName}: ${value.raw_.value} → ${numValue}`,
+        );
+        return numValue;
+      }
+
+      // Try standard conversion
+      let stringValue = String(value);
+      stringValue = stringValue.replace(/[^\d.-]/g, "");
+      numValue = parseInt(stringValue);
+
+      if (isNaN(numValue)) {
+        console.error(`[Stripe Checkout] ❌ NaN result for ${itemName}:`, {
+          original: value,
+          stringValue,
+          parsed: numValue,
+        });
+        return 0;
+      }
+
+      console.log(
+        `[Stripe Checkout] ✅ Converted ${itemName}: ${value} → ${numValue}`,
+      );
+      return numValue;
+    };
+
+    // Map cart items to Stripe line items
+    // Note: Medusa stores prices as BigNumber/Decimal objects, need to convert to integer
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+
+    // Check if we can use individual item prices
+    let hasInvalidPrices = false;
+    for (const item of cart.items) {
+      const unitAmount = toStripeAmount(item.unit_price, item.title);
+      if (unitAmount <= 0) {
+        console.warn(
+          `[Stripe Checkout] ⚠️ Item ${item.title} has invalid price, will use cart total`,
+        );
+        hasInvalidPrices = true;
+        break;
+      }
+    }
+
+    if (hasInvalidPrices) {
+      // Fallback: Use cart total as a single line item
+      const cartTotal = toStripeAmount(cart.total, "Cart Total");
+
+      if (cartTotal <= 0) {
+        throw new Error("Cart total is invalid. Please refresh and try again.");
+      }
+
+      console.log(`[Stripe Checkout] Using cart total fallback: ${cartTotal}`);
+
+      lineItems.push({
+        price_data: {
+          currency: cart.region.currency_code.toLowerCase(),
+          product_data: {
+            name: "Order Total",
+            description: `${cart.items.length} item(s)`,
+          },
+          unit_amount: cartTotal,
+        },
+        quantity: 1,
+      });
+    } else {
+      // Use individual item prices
+      cart.items.forEach((item: any) => {
+        const unitAmount = toStripeAmount(item.unit_price, item.title);
+
+        lineItems.push({
+          price_data: {
+            currency: cart.region.currency_code.toLowerCase(),
+            product_data: {
+              name: item.title,
+              description: item.variant?.title || "",
+              images: item.thumbnail ? [item.thumbnail] : [],
+              metadata: {
+                product_id: item.product_id,
+                variant_id: item.variant_id,
+              },
+            },
+            unit_amount: unitAmount,
+          },
+          quantity: item.quantity,
+        });
+      });
+    }
+
+    // Add shipping as a line item if present (only if not using fallback)
+    if (
+      !hasInvalidPrices &&
+      cart.shipping_methods &&
+      cart.shipping_methods.length > 0
+    ) {
+      const shippingMethod = cart.shipping_methods[0];
+      const shippingAmount = toStripeAmount(
+        shippingMethod.amount,
+        `Shipping: ${shippingMethod.name}`,
+      );
+
+      if (shippingAmount > 0) {
+        lineItems.push({
+          price_data: {
+            currency: cart.region.currency_code.toLowerCase(),
+            product_data: {
+              name: `Shipping: ${shippingMethod.name}`,
+              description: "Delivery fee",
+            },
+            unit_amount: shippingAmount,
+          },
+          quantity: 1,
+        });
+      }
+    }
+
+    // Add tax as a line item if present (only if not using fallback)
+    if (!hasInvalidPrices && cart.tax_total && cart.tax_total > 0) {
+      const taxAmount = toStripeAmount(cart.tax_total, "Tax");
+
+      if (taxAmount > 0) {
+        lineItems.push({
+          price_data: {
+            currency: cart.region.currency_code.toLowerCase(),
+            product_data: {
+              name: "Tax",
+              description: "Sales tax",
+            },
+            unit_amount: taxAmount,
+          },
+          quantity: 1,
+        });
+      }
+    }
+
+    // Log line items for debugging
+    console.log(
+      "[Stripe Checkout] Line items:",
+      JSON.stringify(lineItems, null, 2),
+    );
+
+    // Get origin for success/cancel URLs
+    const origin =
+      req.headers.origin ||
+      process.env.STOREFRONT_URL ||
+      "http://localhost:8000";
+
+    // Get country code for redirect URLs
+    const countryCode = cart.region.countries?.[0]?.iso_2 || "ph";
+
+    // Create Stripe Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: lineItems,
+      customer_email: cart.email,
+      success_url: `${origin}/${countryCode}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/${countryCode}/checkout?canceled=true`,
+      metadata: {
+        cart_id: cart.id,
+        region_id: cart.region_id,
+      },
+      payment_intent_data: {
+        metadata: {
+          cart_id: cart.id,
+          region_id: cart.region_id,
+        },
+      },
+      // Automatically expire after 30 minutes
+      expires_at: Math.floor(Date.now() / 1000) + 30 * 60,
+    });
+
+    console.log("[Stripe Checkout] Session created:", {
+      session_id: session.id,
+      cart_id: cart.id,
+      amount: cart.total,
+      currency: cart.region.currency_code,
+    });
+
+    // Return the checkout URL
+    res.status(200).json({
+      checkout_url: session.url,
+      session_id: session.id,
+    });
+  } catch (error: any) {
+    console.error("[Stripe Checkout] Error creating session:", error);
+    res.status(500).json({
+      error: error.message || "Failed to create checkout session",
+    });
+  }
+}
