@@ -14,7 +14,7 @@ export async function POST(
   console.log("[Stripe Webhook] ===== WEBHOOK RECEIVED =====");
 
   const stripe = new Stripe(process.env.STRIPE_API_KEY!, {
-    apiVersion: "2024-12-18.acacia",
+    apiVersion: "2025-02-24.acacia" as any,
   });
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;

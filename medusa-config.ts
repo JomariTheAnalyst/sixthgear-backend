@@ -89,5 +89,23 @@ module.exports = defineConfig({
         ],
       },
     },
+    // Resend Email Notification Provider
+    {
+      resolve: "@medusajs/medusa/notification",
+      options: {
+        providers: [
+          {
+            resolve: "./src/modules/resend",
+            id: "resend",
+            options: {
+              channels: ["email"],
+              api_key: process.env.RESEND_API_KEY,
+              from: process.env.RESEND_FROM_EMAIL,
+              orders_from: process.env.RESEND_ORDERS_EMAIL,
+            },
+          },
+        ],
+      },
+    },
   ],
 });
