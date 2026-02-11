@@ -75,7 +75,8 @@ function OrderShippedEmailComponent({
       <Html className="font-sans bg-gray-50">
         <Head />
         <Preview>
-          Your SixthGear order #{String(order.display_id)} has been shipped!
+          Your SixthGear order{" "}
+          {order.custom_display_id || `#${order.display_id}`} has been shipped!
         </Preview>
         <Body className="bg-gray-50 my-10 mx-auto w-full max-w-2xl">
           {/* Header - SixthGear Branding */}
@@ -109,7 +110,7 @@ function OrderShippedEmailComponent({
                     Order Number
                   </Text>
                   <Text className="text-base font-semibold text-gray-900 m-0">
-                    #{order.display_id}
+                    {order.custom_display_id || `#${order.display_id}`}
                   </Text>
                 </Column>
                 <Column align="right">

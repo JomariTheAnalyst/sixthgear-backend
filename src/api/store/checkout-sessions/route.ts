@@ -25,10 +25,16 @@ export async function POST(
   res: MedusaResponse,
 ): Promise<void> {
   try {
-    const { cart_id, payment_collection_id, payment_session_id } = req.body as {
+    const {
+      cart_id,
+      payment_collection_id,
+      payment_session_id,
+      selected_item_ids,
+    } = req.body as {
       cart_id: string;
       payment_collection_id?: string;
       payment_session_id?: string;
+      selected_item_ids?: string[]; // Array of selected line item IDs
     };
 
     if (!cart_id) {
@@ -42,6 +48,7 @@ export async function POST(
       cart_id,
       payment_collection_id,
       payment_session_id,
+      selected_item_ids: selected_item_ids?.length || "all items",
     });
 
     // Use Medusa SDK to fetch cart (no external HTTP call needed)
@@ -119,6 +126,33 @@ export async function POST(
         error: "Cart is empty",
       });
       return;
+    }
+
+    // Filter cart items if selected_item_ids provided
+    let itemsToCheckout = cart.items;
+    if (selected_item_ids && selected_item_ids.length > 0) {
+      itemsToCheckout = cart.items.filter((item: any) =>
+        selected_item_ids.includes(item.id),
+      );
+
+      console.log("[Stripe Checkout] Filtered items:", {
+        total_items: cart.items.length,
+        selected_items: itemsToCheckout.length,
+        selected_ids: selected_item_ids,
+      });
+
+      if (itemsToCheckout.length === 0) {
+        res.status(400).json({
+          error: "No selected items found in cart",
+        });
+        return;
+      }
+
+      // Store selected item IDs in session metadata for webhook
+      cart.metadata = cart.metadata || {};
+      cart.metadata.selected_item_ids = selected_item_ids.join(",");
+    } else {
+      console.log("[Stripe Checkout] No item selection - using all cart items");
     }
 
     // Validate cart has shipping address
@@ -205,7 +239,7 @@ export async function POST(
 
     // Check if we can use individual item prices
     let hasInvalidPrices = false;
-    for (const item of cart.items) {
+    for (const item of itemsToCheckout) {
       const unitAmount = toStripeAmount(item.unit_price, item.title);
       if (unitAmount <= 0) {
         console.warn(
@@ -217,29 +251,35 @@ export async function POST(
     }
 
     if (hasInvalidPrices) {
-      // Fallback: Use cart total as a single line item
-      const cartTotal = toStripeAmount((cart as any).total, "Cart Total");
+      // Fallback: Calculate total from selected items
+      const selectedTotal = itemsToCheckout.reduce((sum: number, item: any) => {
+        return (
+          sum + toStripeAmount(item.unit_price, item.title) * item.quantity
+        );
+      }, 0);
 
-      if (cartTotal <= 0) {
+      if (selectedTotal <= 0) {
         throw new Error("Cart total is invalid. Please refresh and try again.");
       }
 
-      console.log(`[Stripe Checkout] Using cart total fallback: ${cartTotal}`);
+      console.log(
+        `[Stripe Checkout] Using selected items total fallback: ${selectedTotal}`,
+      );
 
       lineItems.push({
         price_data: {
           currency: cart.region.currency_code.toLowerCase(),
           product_data: {
             name: "Order Total",
-            description: `${cart.items.length} item(s)`,
+            description: `${itemsToCheckout.length} item(s)`,
           },
-          unit_amount: cartTotal,
+          unit_amount: selectedTotal,
         },
         quantity: 1,
       });
     } else {
-      // Use individual item prices
-      cart.items.forEach((item: any) => {
+      // Use individual item prices for selected items only
+      itemsToCheckout.forEach((item: any) => {
         const unitAmount = toStripeAmount(item.unit_price, item.title);
 
         lineItems.push({
@@ -374,7 +414,7 @@ export async function POST(
       line_items: lineItems,
       customer_email: cart.email,
       success_url: `${origin}/${countryCode}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/${countryCode}/checkout?canceled=true`,
+      cancel_url: `${origin}/${countryCode}/checkout/failed?reason=canceled`,
       metadata: {
         cart_id: cart.id,
         region_id: cart.region_id,
@@ -383,6 +423,7 @@ export async function POST(
         metadata: {
           cart_id: cart.id,
           region_id: cart.region_id,
+          selected_item_ids: selected_item_ids?.join(",") || "", // Store selected items
         },
       },
       // Automatically expire after 30 minutes

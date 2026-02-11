@@ -65,8 +65,8 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
       <Html className="font-sans bg-gray-50">
         <Head />
         <Preview>
-          Thank you for your order from SixthGear - Order #
-          {String(order.display_id)}
+          Thank you for your order from SixthGear - Order{" "}
+          {order.custom_display_id || `#${order.display_id}`}
         </Preview>
         <Body className="bg-gray-50 my-10 mx-auto w-full max-w-2xl">
           {/* Header - SixthGear Branding */}
@@ -98,7 +98,7 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
                     Order Number
                   </Text>
                   <Text className="text-base font-semibold text-gray-900 m-0">
-                    #{order.display_id}
+                    {order.custom_display_id || `#${order.display_id}`}
                   </Text>
                 </Column>
                 <Column align="right">
@@ -166,9 +166,13 @@ function OrderPlacedEmailComponent({ order }: OrderPlacedEmailProps) {
                   .payment_collections?.[0];
                 const payment = paymentCollection?.payments?.[0];
                 const paymentProvider = payment?.provider_id || "manual";
-                const isStripe = paymentProvider === "stripe";
+                const isStripe =
+                  paymentProvider?.includes("stripe") ||
+                  paymentProvider === "pp_stripe_stripe";
                 const isCOD =
-                  paymentProvider === "manual" || paymentProvider === "cod";
+                  paymentProvider === "pp_system_default" ||
+                  paymentProvider === "manual" ||
+                  paymentProvider === "cod";
 
                 if (isStripe) {
                   return (

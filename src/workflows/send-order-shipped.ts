@@ -64,6 +64,7 @@ export const sendOrderShippedWorkflow = createWorkflow(
       fields: [
         "id",
         "display_id",
+        "custom_display_id",
         "email",
         "currency_code",
         "created_at",

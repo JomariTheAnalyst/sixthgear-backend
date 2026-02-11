@@ -15,13 +15,10 @@ module.exports = defineConfig({
     },
     databaseDriverOptions: {
       connection: {
-        ssl: false,
-      },
-      pool: {
-        min: 2,
-        max: 10,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 10000,
+        // Supabase requires SSL, RDS can use SSL or not
+        ssl: process.env.DATABASE_URL?.includes("supabase")
+          ? { rejectUnauthorized: false }
+          : false,
       },
     },
   },
@@ -89,11 +86,12 @@ module.exports = defineConfig({
         ],
       },
     },
-    // Resend Email Notification Provider
+    // Notification Module - Handles both email and admin notifications
     {
       resolve: "@medusajs/medusa/notification",
       options: {
         providers: [
+          // Resend Email Provider - Sends emails to customers
           {
             resolve: "./src/modules/resend",
             id: "resend",
@@ -102,6 +100,14 @@ module.exports = defineConfig({
               api_key: process.env.RESEND_API_KEY,
               from: process.env.RESEND_FROM_EMAIL,
               orders_from: process.env.RESEND_ORDERS_EMAIL,
+            },
+          },
+          // Local Notification Provider - Sends notifications to admin panel
+          {
+            resolve: "@medusajs/medusa/notification-local",
+            id: "local",
+            options: {
+              channels: ["feed"], // Admin notification panel
             },
           },
         ],

@@ -253,44 +253,148 @@ export async function POST(
         `[Track Order] Searching for order: ${normalizedOrderNumber}`,
       );
 
-      // Query order by display_id
-      const { data: orders } = await query.graph({
-        entity: "order",
-        fields: [
-          "id",
-          "display_id",
-          "email",
-          "shipping_address.*",
-          "status",
-          "fulfillment_status",
-          "payment_status",
-          "created_at",
-          "metadata",
-          "fulfillments.*",
-          "fulfillments.labels.*",
-          "items.*",
-          "items.product.*",
-          "items.product.thumbnail",
-          "items.variant.*",
-          "items.variant.title",
-          "items.title",
-          "items.quantity",
-          "items.unit_price",
-          "items.subtotal",
-          "items.thumbnail",
-          "summary.*",
-          "subtotal",
-          "shipping_total",
-          "tax_total",
-          "discount_total",
-          "gift_card_total",
-          "total",
-          "currency_code",
-        ],
-        filters: {
-          display_id: normalizedOrderNumber,
-        },
-      });
+      // Determine if order number is custom format (SIX-000123) or numeric (123)
+      const isCustomFormat = /^SIX-\d{6}$/i.test(normalizedOrderNumber);
+      const isNumericOnly = /^\d+$/.test(normalizedOrderNumber);
+
+      let orders: any[] = [];
+
+      // Try custom_display_id first if it's in SIX format
+      if (isCustomFormat) {
+        console.log(
+          `[Track Order] Searching by custom_display_id: ${normalizedOrderNumber.toUpperCase()}`,
+        );
+
+        const result = await query.graph({
+          entity: "order",
+          fields: [
+            "id",
+            "display_id",
+            "custom_display_id",
+            "email",
+            "shipping_address.*",
+            "status",
+            "fulfillment_status",
+            "payment_status",
+            "created_at",
+            "metadata",
+            "fulfillments.*",
+            "fulfillments.labels.*",
+            "items.*",
+            "items.product.*",
+            "items.product.thumbnail",
+            "items.variant.*",
+            "items.variant.title",
+            "items.title",
+            "items.quantity",
+            "items.unit_price",
+            "items.subtotal",
+            "items.thumbnail",
+            "summary.*",
+            "subtotal",
+            "shipping_total",
+            "tax_total",
+            "discount_total",
+            "gift_card_total",
+            "total",
+            "currency_code",
+          ],
+          filters: { custom_display_id: normalizedOrderNumber.toUpperCase() },
+        });
+
+        orders = result.data || [];
+
+        // If not found by custom_display_id, try extracting numeric part and search by display_id
+        if (orders.length === 0) {
+          const numericPart = normalizedOrderNumber.replace(/^SIX-0*/i, "");
+          console.log(
+            `[Track Order] Not found by custom_display_id, trying display_id: ${numericPart}`,
+          );
+
+          const fallbackResult = await query.graph({
+            entity: "order",
+            fields: [
+              "id",
+              "display_id",
+              "custom_display_id",
+              "email",
+              "shipping_address.*",
+              "status",
+              "fulfillment_status",
+              "payment_status",
+              "created_at",
+              "metadata",
+              "fulfillments.*",
+              "fulfillments.labels.*",
+              "items.*",
+              "items.product.*",
+              "items.product.thumbnail",
+              "items.variant.*",
+              "items.variant.title",
+              "items.title",
+              "items.quantity",
+              "items.unit_price",
+              "items.subtotal",
+              "items.thumbnail",
+              "summary.*",
+              "subtotal",
+              "shipping_total",
+              "tax_total",
+              "discount_total",
+              "gift_card_total",
+              "total",
+              "currency_code",
+            ],
+            filters: { display_id: numericPart },
+          });
+
+          orders = fallbackResult.data || [];
+        }
+      } else if (isNumericOnly) {
+        // Search by display_id (e.g., 123)
+        console.log(
+          `[Track Order] Searching by display_id: ${normalizedOrderNumber}`,
+        );
+
+        const result = await query.graph({
+          entity: "order",
+          fields: [
+            "id",
+            "display_id",
+            "custom_display_id",
+            "email",
+            "shipping_address.*",
+            "status",
+            "fulfillment_status",
+            "payment_status",
+            "created_at",
+            "metadata",
+            "fulfillments.*",
+            "fulfillments.labels.*",
+            "items.*",
+            "items.product.*",
+            "items.product.thumbnail",
+            "items.variant.*",
+            "items.variant.title",
+            "items.title",
+            "items.quantity",
+            "items.unit_price",
+            "items.subtotal",
+            "items.thumbnail",
+            "summary.*",
+            "subtotal",
+            "shipping_total",
+            "tax_total",
+            "discount_total",
+            "gift_card_total",
+            "total",
+            "currency_code",
+          ],
+          filters: { display_id: normalizedOrderNumber },
+        });
+
+        orders = result.data || [];
+      }
 
       console.log(`[Track Order] Found ${orders?.length || 0} orders`);
 
@@ -492,7 +596,9 @@ export async function POST(
     const response = {
       success: true,
       order: {
-        orderNumber: order.display_id,
+        orderNumber:
+          order.custom_display_id ||
+          `SIX-${String(order.display_id).padStart(6, "0")}`,
         status: userFacingStatus,
         orderDate: order.created_at,
         trackingInfo: trackingInfo.length > 0 ? trackingInfo : null,
