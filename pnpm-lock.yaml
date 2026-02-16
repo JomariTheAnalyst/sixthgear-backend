@@ -35,6 +35,9 @@ importers:
       '@rokmohar/medusa-payment-manual':
         specifier: ^1.0.3
         version: 1.0.3(@types/node@20.19.30)(awilix@8.0.1)(express@4.22.1)
+      meilisearch:
+        specifier: ^0.55.0
+        version: 0.55.0
       resend:
         specifier: ^6.5.2
         version: 6.9.1(@react-email/render@2.0.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1))
@@ -57,6 +60,9 @@ importers:
       '@medusajs/icons':
         specifier: 2.12.4
         version: 2.12.4(react@18.3.1)
+      '@medusajs/js-sdk':
+        specifier: ^2.13.1
+        version: 2.13.1
       '@medusajs/test-utils':
         specifier: 2.12.4
         version: 2.12.4(@medusajs/core-flows@2.12.4(@medusajs/framework@2.12.4(@medusajs/cli@2.12.4(@types/node@20.19.30))(@types/node@20.19.30)(ioredis@5.9.2)(vite@5.4.21(@types/node@20.19.30))))(@medusajs/framework@2.12.4(@medusajs/cli@2.12.4(@types/node@20.19.30))(@types/node@20.19.30)(ioredis@5.9.2)(vite@5.4.21(@types/node@20.19.30)))(@medusajs/medusa@2.12.4)
@@ -69,6 +75,9 @@ importers:
       '@swc/jest':
         specifier: ^0.2.36
         version: 0.2.39(@swc/core@1.15.10(@swc/helpers@0.5.18))
+      '@tanstack/react-query':
+        specifier: ^5.90.21
+        version: 5.90.21(react@18.3.1)
       '@types/jest':
         specifier: ^29.5.13
         version: 29.5.14
@@ -1386,6 +1395,10 @@ packages:
 
   '@medusajs/js-sdk@2.12.4':
     resolution: {integrity: sha512-RSZJd7vLXPnvtLUV8WI/aaVRG/3WcrRrCBJg3fUBsVeGupvG3Ac7S77V9bXs1I24mIY6arlfSQ4a7oLe3E6sEA==}
+    engines: {node: '>=20'}
+
+  '@medusajs/js-sdk@2.13.1':
+    resolution: {integrity: sha512-FbUJF3nHX/yvR9YiC/DP4eIh5bPoksphkHsoe4hzqNc/qs9MVslDJt2FYivW86kbiEwsvEHToXikDKISEkArvw==}
     engines: {node: '>=20'}
 
   '@medusajs/link-modules@2.12.4':
@@ -3921,8 +3934,16 @@ packages:
   '@tanstack/query-core@5.64.2':
     resolution: {integrity: sha512-hdO8SZpWXoADNTWXV9We8CwTkXU88OVWRBcsiFrk7xJQnhm6WRlweDzMD+uH+GnuieTBVSML6xFa17C2cNV8+g==}
 
+  '@tanstack/query-core@5.90.20':
+    resolution: {integrity: sha512-OMD2HLpNouXEfZJWcKeVKUgQ5n+n3A2JFmBaScpNDUqSrQSjiveC7dKMe53uJUg1nDG16ttFPz2xfilz6i2uVg==}
+
   '@tanstack/react-query@5.64.2':
     resolution: {integrity: sha512-3pakNscZNm8KJkxmovvtZ4RaXLyiYYobwleTMvpIGUoKRa8j8VlrQKNl5W8VUEfVfZKkikvXVddLuWMbcSCA1Q==}
+    peerDependencies:
+      react: ^18 || ^19
+
+  '@tanstack/react-query@5.90.21':
+    resolution: {integrity: sha512-0Lu6y5t+tvlTJMTO7oh5NSpJfpg/5D41LlThfepTixPYkJ0sE2Jj0m0f6yYqujBwIXlId87e234+MxG3D3g7kg==}
     peerDependencies:
       react: ^18 || ^19
 
@@ -5847,6 +5868,9 @@ packages:
   media-typer@0.3.0:
     resolution: {integrity: sha512-dq+qelQ9akHpcOl/gUVRTxVIOkAJ1wR3QAvb4RsVjS8oVoFjDGTc679wJYmUmknUF5HwMLOgb5O+a3KxfWapPQ==}
     engines: {node: '>= 0.6'}
+
+  meilisearch@0.55.0:
+    resolution: {integrity: sha512-qSMeiezfDgIqciIeYzh5E4pXDZZD7CtHeWDCs43kN3trLgl5FtfmBAIkljL3huFaOx08feYtC8FfIFUpVwq6rg==}
 
   merge-descriptors@1.0.3:
     resolution: {integrity: sha512-gaNvAS7TZ897/rVaZ0nMtAyxNyi/pdbjbAwUpFQpN70GqnVfOiXpeUUMKRBmzXaSQ8DdTX4/0ms62r2K+hE6mQ==}
@@ -9195,6 +9219,11 @@ snapshots:
       '@medusajs/framework': 2.12.4(@medusajs/cli@2.12.4(@types/node@20.19.30))(@types/node@20.19.30)(ioredis@5.9.2)(vite@5.4.21(@types/node@20.19.30))
 
   '@medusajs/js-sdk@2.12.4':
+    dependencies:
+      fetch-event-stream: 0.1.6
+      qs: 6.14.1
+
+  '@medusajs/js-sdk@2.13.1':
     dependencies:
       fetch-event-stream: 0.1.6
       qs: 6.14.1
@@ -12631,9 +12660,16 @@ snapshots:
 
   '@tanstack/query-core@5.64.2': {}
 
+  '@tanstack/query-core@5.90.20': {}
+
   '@tanstack/react-query@5.64.2(react@18.3.1)':
     dependencies:
       '@tanstack/query-core': 5.64.2
+      react: 18.3.1
+
+  '@tanstack/react-query@5.90.21(react@18.3.1)':
+    dependencies:
+      '@tanstack/query-core': 5.90.20
       react: 18.3.1
 
   '@tanstack/react-table@8.20.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
@@ -14879,6 +14915,8 @@ snapshots:
   meant@1.0.3: {}
 
   media-typer@0.3.0: {}
+
+  meilisearch@0.55.0: {}
 
   merge-descriptors@1.0.3: {}
 

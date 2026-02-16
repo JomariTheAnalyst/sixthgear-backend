@@ -172,47 +172,24 @@ export async function POST(
       console.log("[Checkout Cart] ✅ Addresses copied");
     }
 
-    // Step 5: Add selected items to checkout cart
+    // Step 5: Add selected items to checkout cart in a single batch call
     console.log("[Checkout Cart] Adding selected items...");
 
-    // We need to get full variant details to properly add items
-    const productModuleService = req.scope.resolve(Modules.PRODUCT);
+    const lineItemsToAdd = selectedItems.map((item: any) => ({
+      variant_id: item.variant_id,
+      quantity: item.quantity,
+      unit_price: item.unit_price, // Preserve original price
+      title: item.title || "Product",
+      subtitle: item.subtitle || "",
+      thumbnail: item.thumbnail || undefined,
+      metadata: item.metadata || {},
+    }));
 
-    for (const item of selectedItems) {
-      // Get variant with product details
-      const variant = await productModuleService.retrieveProductVariant(
-        item.variant_id,
-        {
-          relations: ["product"],
-        },
-      );
+    await cartModuleService.addLineItems(checkoutCart.id, lineItemsToAdd);
 
-      if (!variant) {
-        console.warn(
-          `[Checkout Cart] ⚠️ Variant not found: ${item.variant_id}`,
-        );
-        continue;
-      }
-
-      // Add line item with all required fields
-      await cartModuleService.addLineItems(checkoutCart.id, [
-        {
-          variant_id: item.variant_id,
-          quantity: item.quantity,
-          unit_price: item.unit_price, // Preserve original price
-          title: item.title || variant.product.title, // Use original title or product title
-          subtitle: item.subtitle || variant.title, // Use original subtitle or variant title
-          thumbnail: item.thumbnail || variant.product.thumbnail, // Use original thumbnail or product thumbnail
-          metadata: item.metadata || {},
-        },
-      ]);
-
-      console.log(
-        `[Checkout Cart] ✅ Added item: ${item.title || variant.product.title} (qty: ${item.quantity})`,
-      );
-    }
-
-    console.log("[Checkout Cart] ✅ All selected items added to checkout cart");
+    console.log("[Checkout Cart] Added selected items:", {
+      count: lineItemsToAdd.length,
+    });
 
     // Step 6: Apply promotions if any (optional - promotions will auto-apply based on cart contents)
     if (originalCart.promotions && originalCart.promotions.length > 0) {

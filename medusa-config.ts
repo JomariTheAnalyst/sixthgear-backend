@@ -31,6 +31,23 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/wishlist",
     },
+    // Product Review Module - Custom module for product reviews
+    {
+      resolve: "./src/modules/product-review",
+    },
+    // Invoice Generator Module - PDF invoice generation for orders
+    {
+      resolve: "./src/modules/invoice_generator",
+    },
+    // Meilisearch Module - Search engine integration
+    {
+      resolve: "./src/modules/meilisearch",
+      options: {
+        host: process.env.MEILISEARCH_HOST!,
+        apiKey: process.env.MEILISEARCH_API_KEY!,
+        productIndexName: process.env.MEILISEARCH_PRODUCT_INDEX_NAME!,
+      },
+    },
     // Redis Event Bus - for async event handling (requires Redis to be running)
     // {
     //   resolve: "@medusajs/medusa/event-bus-redis",
